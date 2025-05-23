@@ -1,15 +1,13 @@
 import streamlit as st
 import numpy as np
-import cv2
 import joblib
-import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageFilter
 
 # Load model and PCA
 model = joblib.load("logreg_mnist_model.pkl")
 pca = joblib.load("mnist_pca_transform.pkl")
 
-# Page title
+# Page config
 st.set_page_config(page_title="MNIST Digit Classifier", layout="centered")
 st.title("🧠 MNIST Digit Classifier using Logistic Regression + PCA")
 
@@ -23,14 +21,16 @@ uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png
 def preprocess_image(img):
     img = img.convert('L')  # Convert to grayscale
     img = img.resize((28, 28), Image.Resampling.LANCZOS)
-    img_np = np.array(img)
 
     # Invert if background is white
+    img_np = np.array(img)
     if np.mean(img_np) > 127:
-        img_np = 255 - img_np
+        img = Image.fromarray(255 - img_np)
 
-    img_np = cv2.GaussianBlur(img_np, (3, 3), 0)
-    img_np = img_np / 255.0
+    # Apply blur using PIL
+    img = img.filter(ImageFilter.GaussianBlur(radius=1))
+
+    img_np = np.array(img) / 255.0
     img_flat = img_np.reshape(1, -1)
     return img_flat, img_np
 
